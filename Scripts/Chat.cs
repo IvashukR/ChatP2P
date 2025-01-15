@@ -19,6 +19,7 @@ public partial class Chat : Node
 	private ENetMultiplayerPeer multiplayer;
 	private List<Button> users_btn = new List<Button>();
 	private List<User> users = new List<User>();
+	private Dictionary<(int, int), Control> activeChats = new Dictionary<(int, int), Control>();
 	private VBoxContainer vbox;
 	private string ph;
 	static public bool is_host;
@@ -165,7 +166,7 @@ public partial class Chat : Node
 			{
 				btn = new Button();
 				btn.Text = user.Nickname;
-				btn.Pressed += () => OpenChat(user.PeerId, user.Nickname, user.Path_Avatar);
+				btn.Pressed += () => OpenChat(user.PeerId, user.Path_Avatar, user.Nickname);
 				vbox.AddChild(btn);
 				users_btn.Add(btn);
 			}
@@ -197,6 +198,41 @@ public partial class Chat : Node
 	}
 	private void OpenChat(int peerId, string avatar, string nik)
 	{
+		RpcId(peerId, "OpenPersonalChat", multiplayer.GetUniqueId(), nik, avatar);
+    	RpcId(multiplayer.GetUniqueId(), "OpenPersonalChat", peerId, nik, avatar);
+	}
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true)]
+	public void OpenPersonalChat(int peerId, string nik, string avatar)
+	{
+		GD.Print(avatar);
+		int myPeerId = multiplayer.GetUniqueId(); 
+		var chatKey = myPeerId < peerId ? (myPeerId, peerId) : (peerId, myPeerId);
+		if (activeChats.ContainsKey(chatKey))
+    	{
+        	var existingChat = activeChats[chatKey];
+        	existingChat.Visible = true;
+        	return;
+   	 	}
+		var chatScene = GD.Load<PackedScene>("res://text_box.tscn");
+    	var chatInstance = chatScene.Instantiate<Control>();
+		TextBox sc = (TextBox)chatInstance;
+		AddChild(chatInstance);
+		sc.closed_btn.Pressed += () => LocalCloseChat(peerId);
+		sc.nik.Text = nik;
+		var image = Image.LoadFromFile(avatar);
+		image.Resize(128, 128);
+		var texture = ImageTexture.CreateFromImage(image);
+		sc.avat.Texture = texture;
+		activeChats[chatKey] = chatInstance;
+		
+	}
+	private void LocalCloseChat(int peerID)
+	{
+		int myPeerId = multiplayer.GetUniqueId(); 
+		var chatKey = myPeerId < peerID ? (myPeerId, peerID) : (peerID, myPeerId);
+		TextBox _tb = (TextBox)activeChats[chatKey];
+		_tb.Visible = false;
 
 	}
+	
 }
