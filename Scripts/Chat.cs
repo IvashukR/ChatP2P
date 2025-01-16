@@ -19,7 +19,7 @@ public partial class Chat : Node
 	private ENetMultiplayerPeer multiplayer;
 	private List<Button> users_btn = new List<Button>();
 	private List<User> users = new List<User>();
-	private Dictionary<(int, int), Control> activeChats = new Dictionary<(int, int), Control>();
+	private Dictionary<(int, int), TextBox> activeChats = new Dictionary<(int, int), TextBox>();
 	private VBoxContainer vbox;
 	private string ph;
 	static public bool is_host;
@@ -68,10 +68,7 @@ public partial class Chat : Node
 	private void _FileSelected(string path)
 	{
 		ph = path;
-        var image = Image.LoadFromFile(path);
-		image.Resize(128, 128);
-		var texture = ImageTexture.CreateFromImage(image);
-		set_avatar.Texture = texture;
+        LoadPhoto(path, set_avatar);
 	}
 	private void save_profil()
 	{
@@ -79,6 +76,7 @@ public partial class Chat : Node
 		user_nik.Text = nik.Text;
 		AddOrUpdateUser(multiplayer.GetUniqueId(), nik.Text,  ph);
 		Rpc("SyncPlayerList", ConvertUsersToVariant(users));
+		 Rpc("NotifyProfileUpdate", multiplayer.GetUniqueId(), nik.Text, ph);
 	}
 	public override void _Ready()
 	{
@@ -148,7 +146,25 @@ public partial class Chat : Node
 
         UpdateInterface();
     }
-
+	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true)]
+	public void NotifyProfileUpdate(int peerId, string nik, string p_a)
+	{
+		int myPeerId = multiplayer.GetUniqueId(); 
+		if (myPeerId == peerId)
+		{
+			return;
+		}
+		var chatKey = myPeerId < peerId ? (myPeerId, peerId) : (peerId, myPeerId);
+		if (activeChats.ContainsKey(chatKey))
+    	{
+        	var chatBox = activeChats[chatKey];
+			chatBox.nik.Text = nik;
+			if(string.IsNullOrEmpty(p_a))
+			{
+				LoadPhoto(p_a, chatBox.avat);
+			}
+   	 	}
+	}
     
 
    	private void UpdateInterface()
@@ -178,7 +194,7 @@ public partial class Chat : Node
 			index++;
 		}
    	}
-	public class User
+	internal class User
 	{
 		public int PeerId { get; set; }      
 		public string Nickname { get; set; }  
@@ -214,15 +230,16 @@ public partial class Chat : Node
         	return;
    	 	}
 		var chatScene = GD.Load<PackedScene>("res://text_box.tscn");
-    	var chatInstance = chatScene.Instantiate<Control>();
-		TextBox sc = (TextBox)chatInstance;
+    	var chatInstance = chatScene.Instantiate<TextBox>();
 		AddChild(chatInstance);
-		sc.closed_btn.Pressed += () => LocalCloseChat(peerId);
-		sc.nik.Text = nik;
-		var image = Image.LoadFromFile(avatar);
-		image.Resize(128, 128);
-		var texture = ImageTexture.CreateFromImage(image);
-		sc.avat.Texture = texture;
+		chatInstance.closed_btn.Pressed += () => LocalCloseChat(peerId);
+		chatInstance.nik.Text = nik;
+		if (string.IsNullOrEmpty(avatar))
+		{
+			activeChats[chatKey] = chatInstance;
+			return;
+		}
+		LoadPhoto(avatar, chatInstance.avat);
 		activeChats[chatKey] = chatInstance;
 		
 	}
@@ -233,6 +250,13 @@ public partial class Chat : Node
 		TextBox _tb = (TextBox)activeChats[chatKey];
 		_tb.Visible = false;
 
+	}
+	private void LoadPhoto(string path, TextureRect tr)
+	{
+		var image = Image.LoadFromFile(path);
+		image.Resize(128, 128);
+		var texture = ImageTexture.CreateFromImage(image);
+		tr.Texture = texture;
 	}
 	
 }
