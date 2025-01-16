@@ -10,9 +10,11 @@ public partial class TextBox : Control
 	public TextureButton closed_btn;
 	public Label nik;
 	public TextureRect avat;
+	public LineEdit enter_msg;
 
 	public override void _Ready()
 	{
+		enter_msg = GetNode<LineEdit>("%enter_msg");
 		avat = GetNode<TextureRect>("%avat");
 		nik = GetNode<Label>("%nik");
 		send_btn = GetNode<TextureButton>("%send");
