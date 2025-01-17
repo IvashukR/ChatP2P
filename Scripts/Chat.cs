@@ -21,6 +21,8 @@ public partial class Chat : Node
 	private List<User> users = new List<User>();
 	private Dictionary<(int, int), TextBox> activeChats = new Dictionary<(int, int), TextBox>();
 	private VBoxContainer vbox;
+	private int k = 0;
+	private int variant = 0;
 	private string ph;
 	static public bool is_host;
 	static public string ip;
@@ -233,8 +235,7 @@ public partial class Chat : Node
     	var chatInstance = chatScene.Instantiate<TextBox>();
 		AddChild(chatInstance);
 		chatInstance.closed_btn.Pressed += () => LocalCloseChat(peerId);
-		chatInstance.send_btn.Pressed += () => SendMessage(chatInstance.enter_msg.Text, chatInstance.vbox, chatInstance.enter_msg, new Color(1, 0, 0));
-		chatInstance.send_btn.Pressed += () => MediatorMessage(chatInstance.enter_msg.Text ,chatInstance.vbox, peerId, chatInstance.enter_msg, multiplayer.GetUniqueId());
+		chatInstance.send_btn.Pressed += () => SendMessage(chatInstance.enter_msg.Text, chatInstance, peerId, 1);
 		chatInstance.nik.Text = nik;
 		if (string.IsNullOrEmpty(avatar))
 		{
@@ -260,31 +261,45 @@ public partial class Chat : Node
 		var texture = ImageTexture.CreateFromImage(image);
 		tr.Texture = texture;
 	}
-	private void SendMessage(string msg, VBoxContainer box_msg, LineEdit e_msg, Color color_msg)
+	private void SendMessage(string msg, TextBox tb , int targetPeerId, int pt)
 	{
 		if(string.IsNullOrEmpty(msg))
 		{
 			return;
 		}
 		var l_msg = new Label();
-		l_msg.Text = msg;
-		l_msg.SelfModulate = color_msg;
-		e_msg.Clear();
-		box_msg.AddChild(l_msg);
+    	l_msg.Text = msg;
+
+    
+    	if (pt == 1)
+    	{
+        	l_msg.SelfModulate = new Color(1, 0, 0);
+    	}
+    	else
+    	{
+        	l_msg.SelfModulate = new Color(1, 1, 1); 
+    	}
+
+    	tb.enter_msg.Clear();
+    	tb.vbox.AddChild(l_msg);
+		RpcId(targetPeerId, "ReceivMessage", msg, multiplayer.GetUniqueId(), targetPeerId);
 		
 	}
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true)]
-	private void ReceivMessage(string msg, VBoxContainer box_msg, int peerId, LineEdit e_msg, int mId)
+	private void ReceivMessage(string msg , int SendpeerId, int TargetpeerId)
 	{
-		var chatKey = mId < peerId ? (mId, peerId) : (peerId, mId);
-		if (activeChats.ContainsKey(chatKey))
+		var myPeerId = multiplayer.GetUniqueId();
+		 var chatKey = myPeerId < SendpeerId ? (myPeerId, SendpeerId) : (SendpeerId, myPeerId);
+
+		if (activeChats.ContainsKey(chatKey) && k <1)
     	{
-        	var Chat = activeChats[chatKey];
-        	SendMessage(msg, Chat.vbox , Chat.enter_msg, new Color(1, 1, 1));
+			GD.Print("RECEIVRPC");
+        	TextBox Chat = activeChats[chatKey];
+        	var l_msg = new Label();
+        	l_msg.Text = msg;
+       	 	l_msg.SelfModulate = new Color(1, 1, 1);
+       	 	Chat.vbox.AddChild(l_msg);
    	 	}
 	}
-	private void MediatorMessage(string msg, VBoxContainer box_msg, int peerId, LineEdit e_msg, int mId)
-	{
-		RpcId(peerId, "ReceivMessage", msg, box_msg, peerId, e_msg, mId);
-	}
+	
 }
