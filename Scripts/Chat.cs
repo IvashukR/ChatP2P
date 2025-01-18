@@ -2,8 +2,6 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
-
-
 public partial class Chat : Node
 {
 	private Button load_btn;
@@ -18,14 +16,18 @@ public partial class Chat : Node
 	private Label user_nik;
 	private ENetMultiplayerPeer multiplayer;
 	private List<Button> users_btn = new List<Button>();
-	private List<User> users = new List<User>();
-	private Dictionary<(int, int), TextBox> activeChats = new Dictionary<(int, int), TextBox>();
+	internal List<User> users = new List<User>();
+	public Dictionary<(int, int), TextBox> activeChats = new Dictionary<(int, int), TextBox>();
 	private VBoxContainer vbox;
-	private int k = 0;
-	private int variant = 0;
+	private string old_nik;
 	private string ph;
+	private Label connection;
+	private Timer connect_t;
+	private Window w_connect;
+	private Button con_btn;
 	static public bool is_host;
 	static public string ip;
+	private void ChangeScene(){GetTree().ChangeSceneToFile("res://maint.tscn");}
 	private void profil_click(Vector2 target_pos)
 	{
 			var tween = CreateTween();
@@ -74,14 +76,20 @@ public partial class Chat : Node
 	}
 	private void save_profil()
 	{
+		old_nik = user_nik.Text;
 		user_avatar.Texture = set_avatar.Texture;
 		user_nik.Text = nik.Text;
 		AddOrUpdateUser(multiplayer.GetUniqueId(), nik.Text,  ph);
 		Rpc("SyncPlayerList", ConvertUsersToVariant(users));
 		Rpc("NotifyProfileUpdate", multiplayer.GetUniqueId(), nik.Text, ph);
+		UpdNikSenderMsg();
 	}
 	public override void _Ready()
 	{
+		w_connect = GetNode<Window>("%connect_win");
+		con_btn = GetNode<Button>("%ok_con_btn");
+		connect_t = GetNode<Timer>("%connect_t");
+		connection = GetNode<Label>("%l_con");
 		vbox = GetNode<VBoxContainer>("%vbox");
 		save_prof = GetNode<Button>("%save_prof");
 		user_nik = GetNode<Label>("%user_nik");
@@ -96,6 +104,7 @@ public partial class Chat : Node
 		Vector2 start_pos = profil.Position;
 		profil_btn.Pressed += () => profil_click(new Vector2(1, 2));
 		krest_btn.Pressed += () => profil_click(start_pos);
+		con_btn.Pressed += () => CallDeferred("ChangeScene");
 		GetNode<PanelContainer>("%user_panel").ClipChildren = CanvasItem.ClipChildrenMode.AndDraw;
 		GetNode<PanelContainer>("%set_panel").ClipChildren = CanvasItem.ClipChildrenMode.AndDraw;
 		save_prof.Pressed += save_profil;
@@ -126,10 +135,28 @@ public partial class Chat : Node
 	}
 	private void StartClient()
 	{
-		multiplayer = new ENetMultiplayerPeer();
-		multiplayer.CreateClient(ip, 12345);
-		Multiplayer.MultiplayerPeer = multiplayer;
-		multiplayer.PeerConnected += (peerId) => OnPlayerConnected((int)peerId);
+		try
+		{
+			multiplayer = new ENetMultiplayerPeer();
+			Error result = multiplayer.CreateClient(ip, 12345);
+			if(result != Error.Ok)
+			{
+				throw new Exception("ErrorConnect");
+			}
+			Multiplayer.MultiplayerPeer = multiplayer;
+			multiplayer.PeerConnected += (peerId) => OnPlayerConnected((int)peerId);
+			connection.Text = "Connection OK";
+			connection.Show();
+			connect_t.Start();
+			connect_t.Timeout += () => connection.Hide();
+		}
+		catch
+		{
+			connection.Text = "Connection Alert";
+			w_connect.Unresizable = true;
+			w_connect.PopupCentered();
+			w_connect.Show();
+		}
 
 	}
 	
@@ -151,6 +178,7 @@ public partial class Chat : Node
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true)]
 	public void NotifyProfileUpdate(int peerId, string nik, string p_a)
 	{
+		TextBox chatBox = new TextBox();
 		int myPeerId = multiplayer.GetUniqueId(); 
 		if (myPeerId == peerId)
 		{
@@ -159,7 +187,7 @@ public partial class Chat : Node
 		var chatKey = myPeerId < peerId ? (myPeerId, peerId) : (peerId, myPeerId);
 		if (activeChats.ContainsKey(chatKey))
     	{
-        	var chatBox = activeChats[chatKey];
+        	chatBox = activeChats[chatKey];
 			chatBox.nik.Text = nik;
 			if(string.IsNullOrEmpty(p_a))
 			{
@@ -167,6 +195,13 @@ public partial class Chat : Node
 			}
 			LoadPhoto(p_a, chatBox.avat);
    	 	}
+		foreach (Label msg in chatBox.vbox.GetChildren())
+        {
+            if (msg.Text.StartsWith($"{old_nik}:"))
+            {
+                msg.Text = msg.Text.Replace($"{old_nik}:", $"{user_nik.Text}:");
+            }
+        }
 	}
     
 
@@ -229,13 +264,14 @@ public partial class Chat : Node
     	{
         	var existingChat = activeChats[chatKey];
         	existingChat.Visible = true;
+			existingChat.GetNode<CanvasLayer>("%CanvasLayer").Show();
         	return;
    	 	}
 		var chatScene = GD.Load<PackedScene>("res://text_box.tscn");
     	var chatInstance = chatScene.Instantiate<TextBox>();
 		AddChild(chatInstance);
 		chatInstance.closed_btn.Pressed += () => LocalCloseChat(peerId);
-		chatInstance.send_btn.Pressed += () => SendMessage(chatInstance.enter_msg.Text, chatInstance, peerId, 1);
+		chatInstance.send_btn.Pressed += () => SendMessage(chatInstance.enter_msg.Text, chatInstance, peerId, 1, user_nik);
 		chatInstance.nik.Text = nik;
 		if (string.IsNullOrEmpty(avatar))
 		{
@@ -251,6 +287,7 @@ public partial class Chat : Node
 		int myPeerId = multiplayer.GetUniqueId(); 
 		var chatKey = myPeerId < peerID ? (myPeerId, peerID) : (peerID, myPeerId);
 		TextBox _tb = (TextBox)activeChats[chatKey];
+		_tb.GetNode<CanvasLayer>("%CanvasLayer").Hide();
 		_tb.Visible = false;
 
 	}
@@ -261,18 +298,16 @@ public partial class Chat : Node
 		var texture = ImageTexture.CreateFromImage(image);
 		tr.Texture = texture;
 	}
-	private void SendMessage(string msg, TextBox tb , int targetPeerId, int pt)
+	private void SendMessage(string msg, TextBox tb , int targetPeerId, int pt, Label nik)
 	{
 		if(string.IsNullOrEmpty(msg))
 		{
 			return;
 		}
 		var l_msg = new Label();
-    	l_msg.Text = msg;
-
-    
     	if (pt == 1)
     	{
+			l_msg.Text = $"{nik.Text}: {msg}";
         	l_msg.SelfModulate = new Color(1, 0, 0);
     	}
     	else
@@ -282,24 +317,40 @@ public partial class Chat : Node
 
     	tb.enter_msg.Clear();
     	tb.vbox.AddChild(l_msg);
-		RpcId(targetPeerId, "ReceivMessage", msg, multiplayer.GetUniqueId(), targetPeerId);
+		RpcId(targetPeerId, "ReceivMessage", msg, multiplayer.GetUniqueId(), targetPeerId, nik.Text);
 		
 	}
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true)]
-	private void ReceivMessage(string msg , int SendpeerId, int TargetpeerId)
+	private void ReceivMessage(string msg , int SendpeerId, int TargetpeerId, string senderNik)
 	{
 		var myPeerId = multiplayer.GetUniqueId();
 		 var chatKey = myPeerId < SendpeerId ? (myPeerId, SendpeerId) : (SendpeerId, myPeerId);
 
-		if (activeChats.ContainsKey(chatKey) && k <1)
+		if (activeChats.ContainsKey(chatKey))
     	{
 			GD.Print("RECEIVRPC");
         	TextBox Chat = activeChats[chatKey];
         	var l_msg = new Label();
-        	l_msg.Text = msg;
+        	l_msg.Text = $"{senderNik}: {msg}";
        	 	l_msg.SelfModulate = new Color(1, 1, 1);
        	 	Chat.vbox.AddChild(l_msg);
    	 	}
+	}
+	private void UpdNikSenderMsg()
+	{
+		foreach(var chat in activeChats.Values)
+		{
+			if(chat.GetParent() == this)
+			{
+				foreach(Label msg in chat.vbox.GetChildren())
+				{
+					if(msg.Text.StartsWith($"{old_nik}:"))
+					{
+						msg.Text.Replace($"{old_nik}:", $"{user_nik.Text}:");
+					}
+				}
+			}
+		}
 	}
 	
 }

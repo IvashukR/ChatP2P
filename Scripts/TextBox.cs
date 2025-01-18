@@ -22,7 +22,6 @@ public partial class TextBox : Control
 		panel = GetNode<PanelContainer>("%panel");
 		vbox = GetNode<VBoxContainer>("%vbox");
 		phone = GetNode<ColorRect>("%phone");
-		vbox.Resized += () => phone.Scale = new Vector2(683, vbox.Scale.Y);
 		panel.ClipChildren = CanvasItem.ClipChildrenMode.AndDraw;
 	}
 
