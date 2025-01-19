@@ -81,8 +81,18 @@ public partial class Chat : Node
 		user_nik.Text = nik.Text;
 		AddOrUpdateUser(multiplayer.GetUniqueId(), nik.Text,  ph);
 		Rpc("SyncPlayerList", ConvertUsersToVariant(users));
-		Rpc("NotifyProfileUpdate", multiplayer.GetUniqueId(), nik.Text, ph);
-		UpdNikSenderMsg();
+		Rpc("NotifyProfileUpdate", multiplayer.GetUniqueId(), nik.Text, ph, old_nik);
+		foreach(TextBox chat in activeChats.Values)
+		{
+			foreach(Label msg in chat.vbox.GetChildren())
+			{
+				if(msg.SelfModulate == new Color(1, 0, 0) && msg.Text.StartsWith($"{old_nik}:"))
+				{
+					GD.Print("UPDNIK");
+					msg.Text = msg.Text.Replace($"{old_nik}:", $"{user_nik.Text}:");
+				}
+			}
+		}
 	}
 	public override void _Ready()
 	{
@@ -176,7 +186,7 @@ public partial class Chat : Node
         UpdateInterface();
     }
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true)]
-	public void NotifyProfileUpdate(int peerId, string nik, string p_a)
+	public void NotifyProfileUpdate(int peerId, string nik, string p_a, string old_nik)
 	{
 		TextBox chatBox = new TextBox();
 		int myPeerId = multiplayer.GetUniqueId(); 
@@ -189,19 +199,22 @@ public partial class Chat : Node
     	{
         	chatBox = activeChats[chatKey];
 			chatBox.nik.Text = nik;
+			foreach (Label msg in chatBox.vbox.GetChildren())
+        	{
+				GD.Print(msg.Text);
+            	if (msg.Text.StartsWith($"{old_nik}:") && msg.SelfModulate == new Color(1, 1, 1))
+            	{
+					GD.Print("RECEIVRPC");
+                	msg.Text = msg.Text.Replace($"{old_nik}:", $"{nik}:");
+            	}
+        	}
 			if(string.IsNullOrEmpty(p_a))
 			{
 				return;
 			}
 			LoadPhoto(p_a, chatBox.avat);
    	 	}
-		foreach (Label msg in chatBox.vbox.GetChildren())
-        {
-            if (msg.Text.StartsWith($"{old_nik}:"))
-            {
-                msg.Text = msg.Text.Replace($"{old_nik}:", $"{user_nik.Text}:");
-            }
-        }
+		
 	}
     
 
@@ -328,7 +341,6 @@ public partial class Chat : Node
 
 		if (activeChats.ContainsKey(chatKey))
     	{
-			GD.Print("RECEIVRPC");
         	TextBox Chat = activeChats[chatKey];
         	var l_msg = new Label();
         	l_msg.Text = $"{senderNik}: {msg}";
@@ -336,21 +348,6 @@ public partial class Chat : Node
        	 	Chat.vbox.AddChild(l_msg);
    	 	}
 	}
-	private void UpdNikSenderMsg()
-	{
-		foreach(var chat in activeChats.Values)
-		{
-			if(chat.GetParent() == this)
-			{
-				foreach(Label msg in chat.vbox.GetChildren())
-				{
-					if(msg.Text.StartsWith($"{old_nik}:"))
-					{
-						msg.Text.Replace($"{old_nik}:", $"{user_nik.Text}:");
-					}
-				}
-			}
-		}
-	}
+	
 	
 }
