@@ -17,10 +17,11 @@ public partial class Chat : Node
 	private ENetMultiplayerPeer multiplayer;
 	private List<Button> users_btn = new List<Button>();
 	internal List<User> users = new List<User>();
-	public Dictionary<(int, int), TextBox> activeChats = new Dictionary<(int, int), TextBox>();
+	public Dictionary<(string, string), TextBox> activeChats = new Dictionary<(string, string), TextBox>();
 	private VBoxContainer vbox;
 	private string old_nik;
 	private string ph;
+	public string user_guid = Guid.NewGuid().ToString();
 	private Label connection;
 	private Timer connect_t;
 	private Window w_connect;
@@ -81,7 +82,7 @@ public partial class Chat : Node
 		user_nik.Text = nik.Text;
 		AddOrUpdateUser(multiplayer.GetUniqueId(), nik.Text,  ph);
 		Rpc("SyncPlayerList", ConvertUsersToVariant(users));
-		Rpc("NotifyProfileUpdate", multiplayer.GetUniqueId(), nik.Text, ph, old_nik);
+		Rpc("NotifyProfileUpdate", nik.Text, ph, old_nik, user_guid);
 		foreach(TextBox chat in activeChats.Values)
 		{
 			foreach(Label msg in chat.vbox.GetChildren())
@@ -186,15 +187,15 @@ public partial class Chat : Node
         UpdateInterface();
     }
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true)]
-	public void NotifyProfileUpdate(int peerId, string nik, string p_a, string old_nik)
+	public void NotifyProfileUpdate(string nik, string p_a, string old_nik, string other_guid)
 	{
 		TextBox chatBox = new TextBox();
-		int myPeerId = multiplayer.GetUniqueId(); 
-		if (myPeerId == peerId)
+		if (user_guid == other_guid)
 		{
 			return;
 		}
-		var chatKey = myPeerId < peerId ? (myPeerId, peerId) : (peerId, myPeerId);
+		var chatKey = user_guid.CompareTo(other_guid) < 0 ? (user_guid, other_guid) : (other_guid, user_guid);
+		
 		if (activeChats.ContainsKey(chatKey))
     	{
         	chatBox = activeChats[chatKey];
@@ -204,7 +205,6 @@ public partial class Chat : Node
 				GD.Print(msg.Text);
             	if (msg.Text.StartsWith($"{old_nik}:") && msg.SelfModulate == new Color(1, 1, 1))
             	{
-					GD.Print("RECEIVRPC");
                 	msg.Text = msg.Text.Replace($"{old_nik}:", $"{nik}:");
             	}
         	}
@@ -233,7 +233,7 @@ public partial class Chat : Node
 			{
 				btn = new Button();
 				btn.Text = user.Nickname;
-				btn.Pressed += () => OpenChat(user.PeerId, user.Path_Avatar, user.Nickname);
+				btn.Pressed += () => OpenChat(user.PeerId, user.Path_Avatar, user.Nickname, user_guid);
 				vbox.AddChild(btn);
 				users_btn.Add(btn);
 			}
@@ -263,16 +263,15 @@ public partial class Chat : Node
             this.Path_Avatar = p_avatar;
         }
 	}
-	private void OpenChat(int peerId, string avatar, string nik)
+	private void OpenChat(int peerId, string avatar, string nik, string other_guid)
 	{
-		RpcId(peerId, "OpenPersonalChat", multiplayer.GetUniqueId(), nik, avatar);
-    	RpcId(multiplayer.GetUniqueId(), "OpenPersonalChat", peerId, nik, avatar);
+		RpcId(peerId, "OpenPersonalChat", multiplayer.GetUniqueId(), nik, avatar, user_guid);
+    	RpcId(multiplayer.GetUniqueId(), "OpenPersonalChat", peerId, nik, avatar, user_guid);
 	}
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true)]
-	public void OpenPersonalChat(int peerId, string nik, string avatar)
+	public void OpenPersonalChat(int peerId, string nik, string avatar, string other_guid)
 	{
-		int myPeerId = multiplayer.GetUniqueId(); 
-		var chatKey = myPeerId < peerId ? (myPeerId, peerId) : (peerId, myPeerId);
+		var chatKey = user_guid.CompareTo(other_guid) < 0 ? (user_guid, other_guid) : (other_guid, user_guid);
 		if (activeChats.ContainsKey(chatKey))
     	{
         	var existingChat = activeChats[chatKey];
@@ -283,7 +282,7 @@ public partial class Chat : Node
 		var chatScene = GD.Load<PackedScene>("res://text_box.tscn");
     	var chatInstance = chatScene.Instantiate<TextBox>();
 		AddChild(chatInstance);
-		chatInstance.closed_btn.Pressed += () => LocalCloseChat(peerId);
+		chatInstance.closed_btn.Pressed += () => LocalCloseChat(other_guid);
 		chatInstance.send_btn.Pressed += () => SendMessage(chatInstance.enter_msg.Text, chatInstance, peerId, 1, user_nik);
 		chatInstance.nik.Text = nik;
 		if (string.IsNullOrEmpty(avatar))
@@ -295,10 +294,9 @@ public partial class Chat : Node
 		activeChats[chatKey] = chatInstance;
 		
 	}
-	private void LocalCloseChat(int peerID)
+	private void LocalCloseChat(string other_guid)
 	{
-		int myPeerId = multiplayer.GetUniqueId(); 
-		var chatKey = myPeerId < peerID ? (myPeerId, peerID) : (peerID, myPeerId);
+		var chatKey = user_guid.CompareTo(other_guid) < 0 ? (user_guid, other_guid) : (other_guid, user_guid);
 		TextBox _tb = (TextBox)activeChats[chatKey];
 		_tb.GetNode<CanvasLayer>("%CanvasLayer").Hide();
 		_tb.Visible = false;
@@ -330,15 +328,13 @@ public partial class Chat : Node
 
     	tb.enter_msg.Clear();
     	tb.vbox.AddChild(l_msg);
-		RpcId(targetPeerId, "ReceivMessage", msg, multiplayer.GetUniqueId(), targetPeerId, nik.Text);
+		RpcId(targetPeerId, "ReceivMessage", msg, user_guid, targetPeerId, nik.Text);
 		
 	}
 	[Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = true)]
-	private void ReceivMessage(string msg , int SendpeerId, int TargetpeerId, string senderNik)
+	private void ReceivMessage(string msg , string other_guid, int TargetpeerId, string senderNik)
 	{
-		var myPeerId = multiplayer.GetUniqueId();
-		 var chatKey = myPeerId < SendpeerId ? (myPeerId, SendpeerId) : (SendpeerId, myPeerId);
-
+		var chatKey = user_guid.CompareTo(other_guid) < 0 ? (user_guid, other_guid) : (other_guid, user_guid);
 		if (activeChats.ContainsKey(chatKey))
     	{
         	TextBox Chat = activeChats[chatKey];
