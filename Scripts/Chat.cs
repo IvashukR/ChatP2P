@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public partial class Chat : Node
 {
@@ -21,11 +22,12 @@ public partial class Chat : Node
 	private VBoxContainer vbox;
 	private string old_nik;
 	private string ph;
-	public string user_guid = Guid.NewGuid().ToString();
+	public string user_guid;
 	private Label connection;
 	private Timer connect_t;
 	private Window w_connect;
 	private Button con_btn;
+	static public bool is_1run = true;
 	static public bool is_host;
 	static public string ip;
 	private void ChangeScene(){GetTree().ChangeSceneToFile("res://maint.tscn");}
@@ -97,6 +99,15 @@ public partial class Chat : Node
 	}
 	public override void _Ready()
 	{
+		if (FileAccess.FileExists("user://stats.tres"))
+        {
+            GD.Print("Load...");
+			LoadProgramm();
+        }
+		else
+		{
+			user_guid = Guid.NewGuid().ToString();
+		}
 		w_connect = GetNode<Window>("%connect_win");
 		con_btn = GetNode<Button>("%ok_con_btn");
 		connect_t = GetNode<Timer>("%connect_t");
@@ -134,6 +145,8 @@ public partial class Chat : Node
 		{
 			StartClient();
 		}
+		
+		
 	}
 
 	private void StartServer()
@@ -344,6 +357,42 @@ public partial class Chat : Node
        	 	Chat.vbox.AddChild(l_msg);
    	 	}
 	}
-	
-	
+	public void SaveProgramm()
+	{
+		Stats stats = new Stats(is_host, user_nik.Text, ph, activeChats, ip, user_guid, false);
+		ResourceSaver.Save(stats, "user://stats.tres");
+	}
+	public void LoadProgramm()
+	{
+		GD.Print("Load...");
+		Stats stats = (Stats)GD.Load("user://stats.tres");
+		user_nik.Text = stats.nik;
+		user_guid = stats.guid;
+		is_host = stats.is_host;
+		is_1run = stats.is_1run;
+		ip = stats.ip;
+		LoadPhoto(stats.p_avatar, user_avatar);
+		activeChats = stats.cp_activeChats.ToDictionary(entry => entry.Key, entry => entry.Value);
+		foreach(var chat in activeChats)
+		{
+			if(chat.Key.Item1 == user_guid || chat.Key.Item2 == user_guid)
+			{
+				AddChild(chat.Value);
+			}
+		}
+
+	}
+    public override void _Notification(int what)
+    {
+		if (what == NotificationWMCloseRequest)
+		{
+			SaveProgramm();
+			GD.Print("Save");
+			GetTree().Quit();
+		}
+        
+    }
+
+
+
 }
