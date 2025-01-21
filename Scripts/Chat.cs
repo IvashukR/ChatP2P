@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 
 public partial class Chat : Node
 {
@@ -99,7 +100,7 @@ public partial class Chat : Node
 	}
 	public override void _Ready()
 	{
-		if (FileAccess.FileExists("user://stats.tres"))
+		if (File.Exists("user://stats.tres"))
         {
             GD.Print("Load...");
 			LoadProgramm();
