@@ -1,0 +1,159 @@
+[gd_scene load_steps=3 format=3 uid="uid://ry7a37l6bx0x"]
+
+[ext_resource type="Script" path="res://Scripts/Main.cs" id="1_8pqv8"]
+[ext_resource type="Texture2D" uid="uid://dips1f0hri2yg" path="res://Assets/copy_ip.png" id="2_1ngrh"]
+
+[node name="main" type="Node"]
+script = ExtResource("1_8pqv8")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.193154, 0.193154, 0.193154, 1)
+
+[node name="CreateRoom" type="Button" parent="Control"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.36
+anchor_top = 0.304
+anchor_right = 0.627
+anchor_bottom = 0.437
+offset_left = 0.279968
+offset_top = 0.00798035
+offset_right = -0.304016
+offset_bottom = -0.175995
+
+[node name="JoinRoom" type="Button" parent="Control"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.364
+anchor_top = 0.5
+anchor_right = 0.63
+anchor_bottom = 0.625
+offset_left = -0.328033
+offset_top = -5.0
+offset_right = 0.239929
+
+[node name="load_btn" type="Button" parent="Control"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.364
+anchor_top = 0.681
+anchor_right = 0.63
+anchor_bottom = 0.813
+offset_left = -0.328033
+offset_top = -0.288025
+offset_right = 0.23999
+offset_bottom = 0.175964
+text = "LOAD"
+
+[node name="JoinRoom_l" type="Label" parent="Control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.453
+anchor_top = 0.537
+anchor_right = 0.692
+anchor_bottom = 0.647
+offset_left = 0.143982
+offset_top = 0.0239868
+offset_right = -0.184021
+offset_bottom = -0.256012
+text = "Join Room"
+
+[node name="CreateRoom_l" type="Label" parent="Control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.439
+anchor_top = 0.35
+anchor_right = 0.715
+anchor_bottom = 0.466
+offset_left = 0.271973
+offset_top = 0.199982
+offset_right = 0.319946
+offset_bottom = 0.0319824
+text = "Create Room
+"
+
+[node name="window_ip" type="Window" parent="."]
+unique_name_in_owner = true
+title = "Your IP"
+position = Vector2i(0, 36)
+size = Vector2i(200, 200)
+visible = false
+
+[node name="ok_ip" type="Button" parent="window_ip"]
+unique_name_in_owner = true
+offset_left = 50.0
+offset_top = 169.0
+offset_right = 150.0
+offset_bottom = 186.0
+
+[node name="label_ip" type="Label" parent="window_ip"]
+unique_name_in_owner = true
+offset_left = 38.0
+offset_top = 71.0
+offset_right = 217.0
+offset_bottom = 129.0
+
+[node name="ok_l" type="Label" parent="window_ip"]
+unique_name_in_owner = true
+offset_left = 87.0
+offset_top = 166.0
+offset_right = 150.0
+offset_bottom = 189.0
+text = "OK
+"
+
+[node name="copy_ip" type="TextureButton" parent="window_ip"]
+unique_name_in_owner = true
+offset_left = 118.0
+offset_top = 110.0
+offset_right = 638.0
+offset_bottom = 630.0
+scale = Vector2(0.135, 0.135)
+texture_normal = ExtResource("2_1ngrh")
+
+[node name="window_e_ip" type="Window" parent="."]
+unique_name_in_owner = true
+title = "Enter IP"
+position = Vector2i(0, 36)
+size = Vector2i(200, 200)
+visible = false
+
+[node name="ok_ip2" type="Button" parent="window_e_ip"]
+unique_name_in_owner = true
+offset_left = 50.0
+offset_top = 169.0
+offset_right = 150.0
+offset_bottom = 186.0
+
+[node name="ok_l2" type="Label" parent="window_e_ip"]
+unique_name_in_owner = true
+offset_left = 87.0
+offset_top = 166.0
+offset_right = 150.0
+offset_bottom = 189.0
+text = "OK
+"
+
+[node name="enter_ip" type="LineEdit" parent="window_e_ip"]
+unique_name_in_owner = true
+offset_left = 39.0
+offset_top = 86.0
+offset_right = 158.0
+offset_bottom = 117.0

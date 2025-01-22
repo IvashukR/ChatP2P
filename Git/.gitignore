@@ -1,0 +1,12 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+*
+!*/
+!*.cs       
+!*.png      
+!*.jpg      
+!*.tscn     
+!*.csproj
+!*.gitignore
+!*.gitattributes

@@ -1,0 +1,219 @@
+[gd_scene load_steps=7 format=3 uid="uid://cgur3f2831ual"]
+
+[ext_resource type="Script" path="res://Scripts/Chat.cs" id="1_pffhm"]
+[ext_resource type="Texture2D" uid="uid://v0lu4txwyx5y" path="res://Assets/krest.png" id="2_r7ui0"]
+[ext_resource type="Texture2D" uid="uid://t51tix1jjumn" path="res://Assets/btn_krest.png" id="3_umn02"]
+[ext_resource type="Texture2D" uid="uid://cfw58drd4lfai" path="res://Assets/btn_profil.png" id="4_wt2f0"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4bend"]
+bg_color = Color(0.641931, 0.641935, 0.641934, 1)
+corner_radius_top_left = 80
+corner_radius_top_right = 80
+corner_radius_bottom_right = 80
+corner_radius_bottom_left = 80
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3tpb1"]
+corner_radius_top_left = 80
+corner_radius_top_right = 80
+corner_radius_bottom_right = 80
+corner_radius_bottom_left = 80
+
+[node name="Chat2" type="Node"]
+script = ExtResource("1_pffhm")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="profil_btn" type="TextureButton" parent="HUD"]
+unique_name_in_owner = true
+offset_left = -18.0
+offset_top = -1.0
+offset_right = 502.0
+offset_bottom = 519.0
+scale = Vector2(0.305, 0.305)
+texture_normal = ExtResource("2_r7ui0")
+
+[node name="profil" type="ColorRect" parent="HUD"]
+unique_name_in_owner = true
+offset_left = -387.0
+offset_top = -8.0
+offset_bottom = 646.0
+color = Color(0.324203, 0.324203, 0.324203, 1)
+
+[node name="set_panel" type="PanelContainer" parent="HUD/profil"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 54.0
+offset_top = 51.0
+offset_right = 149.0
+offset_bottom = 142.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_4bend")
+
+[node name="set_avatar" type="TextureRect" parent="HUD/profil/set_panel"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="load_btn" type="Button" parent="HUD/profil"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 222.0
+offset_top = 72.0
+offset_right = 344.0
+offset_bottom = 116.0
+
+[node name="Label" type="Label" parent="HUD/profil"]
+layout_mode = 0
+offset_left = 234.0
+offset_top = 81.0
+offset_right = 367.0
+offset_bottom = 116.0
+text = "Load Photo
+"
+
+[node name="nik" type="LineEdit" parent="HUD/profil"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 111.0
+offset_top = 324.0
+offset_right = 256.0
+offset_bottom = 355.0
+
+[node name="name_l" type="Label" parent="HUD/profil"]
+layout_mode = 0
+offset_left = 130.0
+offset_top = 285.0
+offset_right = 289.0
+offset_bottom = 314.0
+text = "Enter Name:
+"
+
+[node name="save_prof" type="Button" parent="HUD/profil"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 136.0
+offset_top = 440.0
+offset_right = 238.0
+offset_bottom = 466.0
+
+[node name="save_l" type="Label" parent="HUD/profil"]
+layout_mode = 0
+offset_left = 162.0
+offset_top = 442.0
+offset_right = 242.0
+offset_bottom = 465.0
+text = "SAVE
+"
+
+[node name="krest_btn" type="TextureButton" parent="HUD/profil"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 262.0
+offset_top = 558.0
+offset_right = 774.0
+offset_bottom = 1070.0
+scale = Vector2(0.195, 0.195)
+texture_normal = ExtResource("3_umn02")
+texture_pressed = ExtResource("4_wt2f0")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = 4352.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.197937, 0.197937, 0.197937, 1)
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(1.05, 1.05)
+
+[node name="user_panel" type="PanelContainer" parent="Control"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 911.0
+offset_top = 22.0
+offset_right = 1020.0
+offset_bottom = 132.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_3tpb1")
+
+[node name="user_avatar" type="TextureRect" parent="Control/user_panel"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="user_nik" type="Label" parent="Control"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 821.905
+offset_top = 47.619
+offset_right = 894.905
+offset_bottom = 70.619
+
+[node name="scroll" type="ScrollContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 163.0
+offset_right = -59.0
+offset_bottom = -366.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(1, 5.34286)
+
+[node name="vbox" type="VBoxContainer" parent="Control/scroll"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(1100, 96)
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 4
+
+[node name="file_system" type="FileDialog" parent="."]
+unique_name_in_owner = true
+title = "Open a File"
+size = Vector2i(303, 180)
+ok_button_text = "Open"
+file_mode = 0
+access = 2
+show_hidden_files = true
+use_native_dialog = true
+
+[node name="connect_t" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 3.0
+one_shot = true
+
+[node name="connect_win" type="Window" parent="."]
+unique_name_in_owner = true
+position = Vector2i(0, 36)
+size = Vector2i(200, 200)
+visible = false
+
+[node name="l_con" type="Label" parent="connect_win"]
+unique_name_in_owner = true
+offset_left = 36.0
+offset_top = 72.0
+offset_right = 311.0
+offset_bottom = 112.0
+text = "jcjkbjcbxzjkb"
+
+[node name="ok_con_btn" type="Button" parent="connect_win"]
+unique_name_in_owner = true
+offset_left = 49.0
+offset_top = 138.0
+offset_right = 139.0
+offset_bottom = 169.0
+text = "OK"
+
+[node name="save_btn" type="Button" parent="."]
+offset_left = 1033.0
+offset_top = 599.0
+offset_right = 1139.0
+offset_bottom = 624.0
+text = "SAVE"
