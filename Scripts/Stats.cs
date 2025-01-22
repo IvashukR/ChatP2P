@@ -1,6 +1,5 @@
 using Godot;
 using System.Collections.Generic;
-using System.Linq;
 
 [GlobalClass]
 public partial class Stats : Resource
@@ -11,6 +10,7 @@ public partial class Stats : Resource
     [Export] public string guid;
     [Export] public string p_avatar;
     public Dictionary<(string, string), List<Godot.Collections.Dictionary>> cp_activeChats = new Dictionary<(string, string), List<Godot.Collections.Dictionary>>();
+    //Godot can't Serealized hard object as prefab TextBox that's why I'll do it myself.
     public Stats(bool is_host, string nik, string p_avatar, string ip, string guid)
     {
         this.guid = guid;
@@ -20,6 +20,7 @@ public partial class Stats : Resource
         this.ip = ip;
     }
     public Stats() : this(false, null, null, null, null) {}
-    //Godot can't Serealized hard object as prefab TextBox that's why I'll do it myself.
+    //godot need void constructor for class what inhertion resorce for save and load .tres
+    
 
 }
