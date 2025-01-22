@@ -1,7 +1,6 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
 
 public partial class Chat : Node
@@ -28,7 +27,6 @@ public partial class Chat : Node
 	private Timer connect_t;
 	private Window w_connect;
 	private Button con_btn;
-	static public bool is_1run = true;
 	static public bool is_host;
 	static public string ip;
 	private void ChangeScene(){GetTree().ChangeSceneToFile("res://maint.tscn");}
@@ -360,28 +358,31 @@ public partial class Chat : Node
 	}
 	public void SaveProgramm()
 	{
-		Stats stats = new Stats(is_host, user_nik.Text, ph, activeChats, ip, user_guid, false);
-		ResourceSaver.Save(stats, "user://stats.tres");
-	}
+		Stats stats = new Stats(is_host, user_nik.Text, ph, ip, user_guid);
+		foreach (var chat in activeChats)
+        {
+			TextBox _chat = (TextBox)chat.Value;
+			List<Godot.Collections.Dictionary> list_msg_data = new List<Godot.Collections.Dictionary>();
+            foreach (Label msg in _chat.vbox.GetChildren())
+        	{
+				Godot.Collections.Dictionary msg_data = new Godot.Collections.Dictionary();
+				msg_data[msg.Text] = msg.SelfModulate;
+				list_msg_data.Add(msg_data);
+        	}
+			stats.cp_activeChats[chat.Key] = list_msg_data;
+        }
+		
+    }
+	
 	public void LoadProgramm()
 	{
 		GD.Print("Load...");
-		Stats stats = (Stats)GD.Load("user://stats.tres");
+		Stats stats = (Stats)ResourceLoader.Load("user://stats.tres");
 		user_nik.Text = stats.nik;
 		user_guid = stats.guid;
 		is_host = stats.is_host;
-		is_1run = stats.is_1run;
 		ip = stats.ip;
 		LoadPhoto(stats.p_avatar, user_avatar);
-		activeChats = stats.cp_activeChats.ToDictionary(entry => entry.Key, entry => entry.Value);
-		foreach(var chat in activeChats)
-		{
-			if(chat.Key.Item1 == user_guid || chat.Key.Item2 == user_guid)
-			{
-				AddChild(chat.Value);
-			}
-		}
-
 	}
     public override void _Notification(int what)
     {
